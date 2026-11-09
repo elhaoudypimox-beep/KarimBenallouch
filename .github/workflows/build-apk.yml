@@ -26,10 +26,13 @@ jobs:
           if [ -f index.html ]; then
             cp index.html www/
           fi
-      - name: Build APK
+      - name: Build APK and Assets
         run: |
-          npm install @capacitor/android
+          npm install @capacitor/android @capacitor/assets
           npx cap add android
+          if [ -f icon.png ]; then
+            npx cap-assets generate --iconAvailable
+          fi
           npx cap sync android
           cd android
           chmod +x gradlew
@@ -37,5 +40,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug
+          name: KBService-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
