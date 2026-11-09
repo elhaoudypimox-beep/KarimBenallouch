@@ -31,7 +31,7 @@ jobs:
           npm install @capacitor/android @capacitor/assets
           npx cap add android
           if [ -f icon.png ]; then
-            npx cap-assets generate --iconAvailable
+            npx @capacitor/assets generate --iconAvailable
           fi
           npx cap sync android
           cd android
