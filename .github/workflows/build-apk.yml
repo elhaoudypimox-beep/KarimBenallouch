@@ -26,13 +26,30 @@ jobs:
           if [ -f index.html ]; then
             cp index.html www/
           fi
-      - name: Build APK and Assets
+      - name: Build APK and Custom Icon
         run: |
-          npm install @capacitor/android @capacitor/assets
+          npm install @capacitor/android
           npx cap add android
+          
+          # نسخ الأيقونة مباشرة لمجلد الموارد في أندرويد باش تبان بلا أخطاء
           if [ -f icon.png ]; then
-            npx @capacitor/assets generate --iconAvailable
+            mkdir -p android/app/src/main/res/mipmap-hdpi
+            mkdir -p android/app/src/main/res/mipmap-mdpi
+            mkdir -p android/app/src/main/res/mipmap-xhdpi
+            mkdir -p android/app/src/main/res/mipmap-xxhdpi
+            mkdir -p android/app/src/main/res/mipmap-xxxhdpi
+            cp icon.png android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+            cp icon.png android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+            cp icon.png android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+            cp icon.png android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+            cp icon.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+            cp icon.png android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png
+            cp icon.png android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png
+            cp icon.png android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png
+            cp icon.png android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
+            cp icon.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
           fi
+
           npx cap sync android
           cd android
           chmod +x gradlew
