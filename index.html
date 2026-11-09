@@ -13,7 +13,7 @@
 html{height:100%}
 body{font-family:Inter,system-ui,sans-serif;color:var(--tx);min-height:100%;overscroll-behavior:none;padding:env(safe-area-inset-top) env(safe-area-inset-right) calc(env(safe-area-inset-bottom) + 94px) env(safe-area-inset-left);background:radial-gradient(500px 500px at 0% 0%,rgba(212,175,55,.07),transparent),radial-gradient(500px 500px at 100% 100%,rgba(243,156,18,.06),transparent),var(--bg)}
 ::-webkit-scrollbar{width:8px}::-webkit-scrollbar-thumb{background:rgba(212,175,55,.25);border-radius:8px}
-#app{max-width:780px;min-height:calc(var(--vh,1vh)*100 - 94px);margin:0 auto;padding:14px;animation:fi .4s ease both}@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+#app{width:100%;min-height:100vh;min-height:100dvh;margin:0;padding:14px;animation:fi .4s ease both}@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .box{max-width:430px;margin:5vh auto 0;text-align:center}
 .box>img{width:80px;height:80px;border-radius:18px;object-fit:cover;border:1px solid var(--line);box-shadow:0 0 0 1px rgba(212,175,55,.35),0 8px 30px -8px rgba(212,175,55,.25)}
 .pn{background:linear-gradient(180deg,rgba(27,28,37,.9),rgba(21,22,28,.95));border:1px solid var(--line);border-radius:18px;padding:22px;margin-top:22px;text-align:left}
@@ -88,7 +88,7 @@ function setVH(){document.documentElement.style.setProperty('--vh',(window.inner
 setVH();window.addEventListener('resize',setVH);window.addEventListener('orientationchange',()=>setTimeout(setVH,200));
 let mode='load',authMode='login',view='tasks',me,isA,info={},tasks=[],users=[],reps=[],unsubs=[],msgs=[],peer=null,filt='all',adm={},cfgErrMsg='';
 const $=s=>document.querySelector(s),t=k=>T[lang][k]||k,esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-function toast(m){const d=document.createElement('div');d.className='toast';d.textContent=m;document.body.append(d);setTimeout(()=>d.remove(),4500)}
+function toast(m){const d=document.createElement('div');d.className='toast';d.textContent=m;document.body.append(d);setTimeout(()=>d.remove(),/⚠/.test(m)?9000:4500)}
 function setLang(){lang=lang=='fr'?'en':'fr';try{localStorage.lang=lang}catch(e){}draw()}
 function draw(){const a=$('#app');if(!(mode=='app'&&view=='chat'&&peer))document.body.classList.remove('has-cmp');
  if(mode=='load'){a.innerHTML=`<div class=box>${LOGO}</div>`;return}
@@ -112,11 +112,27 @@ function draw(){const a=$('#app');if(!(mode=='app'&&view=='chat'&&peer))document
  document.body.classList.toggle('has-cmp',chat);
  a.innerHTML=hd+tb+(chat?'':f)+`<div id=list></div>`+(chat?f:'');lst()}
 const go=x=>{view=x;if(x=='chat')peer=null;draw()},op=id=>{peer=id;draw()};
-const fh=a=>(a||[]).map(f=>f.y=='i'?`<img class=th src="${f.d}" onclick="zoom(this.src)">`:`<a class=fl href="${f.d}" download="${esc(f.n)}">📎 ${esc(f.n)}</a>`).join('');
+function openD(a){try{const C=window.Capacitor;if(C&&C.isNativePlatform&&C.isNativePlatform()){
+ const P=C.Plugins||{},F=P.Filesystem,S=P.Share;if(!F||!S){toast('⚠ Plugins Filesystem/Share manquants dans l’APK');return false}
+ const d=a.getAttribute('href'),n=(a.getAttribute('download')||'fichier').replace(/[\\\/:*?"<>|]+/g,'_');
+ (async()=>{try{await F.writeFile({path:n,data:d.split(',')[1],directory:'CACHE'});const r=await F.getUri({path:n,directory:'CACHE'});await S.share({title:n,dialogTitle:n,url:r.uri})}catch(e){const m=String((e&&e.message)||e);if(!/cancel/i.test(m))toast('⚠ '+m)}})();return false}}catch(e){}return true}
+function openF(a){try{const C=window.Capacitor;if(C&&C.isNativePlatform&&C.isNativePlatform()){const u=a.href,B=C.Plugins&&C.Plugins.Browser;toast('⬇ Ouverture du fichier…');if(B&&B.open)B.open({url:u});else window.location.assign(u);return false}}catch(e){}return true}
+const fh=a=>(a||[]).map(f=>f.fileUrl?`<a class=fl href="${esc(f.fileUrl)}" target="_blank" rel="noopener" onclick="return openF(this)">${f.y=='i'?`<img class=th src="${esc(f.fileUrl)}" alt="${esc(f.fileName)}">`:'📎 '+esc(f.fileName)}</a>`:f.y=='i'?`<img class=th src="${f.d}" onclick="zoom(this.src)">`:`<a class=fl href="${f.d}" download="${esc(f.n)}" onclick="return openD(this)">📎 ${esc(f.n)}</a>`).join('');
 function zoom(s){const o=document.createElement('div');o.className='ov';o.style.textAlign='center';o.innerHTML=`<img src="${s}" style="max-width:100%;max-height:92vh;border-radius:10px"><br><a href="${s}" download="photo.jpg">⬇</a>`;o.onclick=e=>{if(e.target.tagName!='A')o.remove()};document.body.append(o)}
 function ask(m,inp){return new Promise(r=>{const o=document.createElement('div');o.className='ov';o.innerHTML=`<div class=pn style="max-width:340px;margin:30vh auto 0"><p class=m style="font-size:15px">${m}</p>${inp?'<input id=ai type=password>':''}<button id=ay>OK</button><button class=s id=an>${t('cancel')}</button></div>`;document.body.append(o);$('#ay').onclick=()=>{const v=inp?$('#ai').value:true;o.remove();r(v)};$('#an').onclick=()=>{o.remove();r(null)}})}
 function rf(file){return new Promise(r=>{if(file.type.startsWith('image/')){const i=new Image,u=URL.createObjectURL(file);i.onload=()=>{const k=Math.min(1,1000/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=i.width*k;c.height=i.height*k;c.getContext('2d').drawImage(i,0,0,c.width,c.height);URL.revokeObjectURL(u);r({n:file.name,y:'i',d:c.toDataURL('image/jpeg',.72)})};i.onerror=()=>r(null);i.src=u}else{if(file.size>1.5e6){toast(t('big'));return r(null)}const x=new FileReader;x.onload=()=>r({n:file.name,y:'f',d:x.result});x.readAsDataURL(file)}})}
-async function pick(id){const e=$('#'+id),o=[];if(e)for(const f of e.files){const x=await rf(f);if(x)o.push(x)}return o}
+async function pick(id){const e=$('#'+id),o=[];if(!e||!e.files.length)return o;
+ const MAX=650*1024;let tot=0;
+ for(const f of e.files){
+  try{
+   if(f.type.startsWith('image/')){const x=await rf(f);if(!x)continue;const sz=Math.round((x.d.length-x.d.indexOf(',')-1)*0.75);
+    if(tot+sz>MAX){toast('⚠ Fichiers trop lourds (max ~650 Ko au total) : '+f.name);continue}tot+=sz;o.push(x)}
+   else{if(tot+f.size>MAX){toast('⚠ Fichier trop lourd (max ~650 Ko) : '+f.name+' ('+Math.round(f.size/1024)+' Ko)');continue}
+    const x=await new Promise(r=>{const rd=new FileReader;rd.onload=()=>r({n:f.name,y:'f',d:rd.result});rd.onerror=()=>r(null);rd.readAsDataURL(f)});
+    if(x){tot+=f.size;o.push(x)}}
+  }catch(err){toast('⚠ '+((err&&err.message)||f.name))}
+ }
+ return o}
 async function sv(fn){try{return await fn()}catch(e){const c=(e&&e.code)||'';toast(c=='permission-denied'?'⚠ Accès refusé (vérifiez les Rules Firestore)':c=='unavailable'?'⚠ Pas de connexion internet':c?('⚠ '+c):t('full'))}}
 const cv=p=>msgs.filter(m=>m.from==p||m.to==p).sort((a,b)=>a.created-b.created),ur=p=>msgs.filter(m=>m.from==p&&m.created>(+st['rd:'+me.id+':'+p]||0)).length,unread=()=>msgs.filter(m=>m.to==me.id&&m.created>(+st['rd:'+me.id+':'+m.from]||0)).length;
 function bdg(){const e=$('#bd_chat');if(e){const n=unread();e.textContent=n||''}}
