@@ -7,13 +7,15 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.0/firebase-app-compat.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.0/firebase-auth-compat.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.0/firebase-firestore-compat.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.0/firebase-storage-compat.min.js"></script>
 <style>
 :root{--bg:#0F1015;--card:#15161C;--card2:#1B1C25;--line:rgba(212,175,55,.16);--tx:#EDEAE2;--mut:#9A9AA8;--ac:#D4AF37;--gold:#D4AF37;--ok:#34d399;--bad:#f87171;--gg:linear-gradient(135deg,#F3D77A 0%,#D4AF37 45%,#B8860B 100%)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html,body{margin:0;background:var(--bg)}
 html{height:100%}
 body{font-family:Inter,system-ui,sans-serif;color:var(--tx);min-height:100%;overscroll-behavior:none;padding:env(safe-area-inset-top) env(safe-area-inset-right) calc(env(safe-area-inset-bottom) + 94px) env(safe-area-inset-left);background:radial-gradient(500px 500px at 0% 0%,rgba(212,175,55,.07),transparent),radial-gradient(500px 500px at 100% 100%,rgba(243,156,18,.06),transparent),var(--bg)}
 ::-webkit-scrollbar{width:8px}::-webkit-scrollbar-thumb{background:rgba(212,175,55,.25);border-radius:8px}
-#app{width:100%;min-height:100vh;min-height:100dvh;margin:0;padding:14px;}.box{max-width:430px;margin:5vh auto 0;text-align:center}
+#app{max-width:780px;min-height:calc(var(--vh,1vh)*100 - 94px);margin:0 auto;padding:14px;animation:fi .4s ease both}@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.box{max-width:430px;margin:5vh auto 0;text-align:center}
 .box>img{width:80px;height:80px;border-radius:18px;object-fit:cover;border:1px solid var(--line);box-shadow:0 0 0 1px rgba(212,175,55,.35),0 8px 30px -8px rgba(212,175,55,.25)}
 .pn{background:linear-gradient(180deg,rgba(27,28,37,.9),rgba(21,22,28,.95));border:1px solid var(--line);border-radius:18px;padding:22px;margin-top:22px;text-align:left}
 h1{font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:700;margin:14px 0 4px;letter-spacing:.02em}h1 span,.gt{background:var(--gg);-webkit-background-clip:text;background-clip:text;color:transparent}
@@ -111,11 +113,25 @@ function draw(){const a=$('#app');if(!(mode=='app'&&view=='chat'&&peer))document
  document.body.classList.toggle('has-cmp',chat);
  a.innerHTML=hd+tb+(chat?'':f)+`<div id=list></div>`+(chat?f:'');lst()}
 const go=x=>{view=x;if(x=='chat')peer=null;draw()},op=id=>{peer=id;draw()};
-const fh=a=>(a||[]).map(f=>f.y=='i'?`<img class=th src="${f.d}" onclick="zoom(this.src)">`:`<a class=fl href="${f.d}" download="${esc(f.n)}">📎 ${esc(f.n)}</a>`).join('');
+const fh=a=>(a||[]).map(f=>f.fileUrl?`<a class=fl href="${esc(f.fileUrl)}" target="_blank" rel="noopener">${f.y=='i'?`<img class=th src="${esc(f.fileUrl)}" alt="${esc(f.fileName)}">`:'📎 '+esc(f.fileName)}</a>`:f.y=='i'?`<img class=th src="${f.d}" onclick="zoom(this.src)">`:`<a class=fl href="${f.d}" download="${esc(f.n)}">📎 ${esc(f.n)}</a>`).join('');
 function zoom(s){const o=document.createElement('div');o.className='ov';o.style.textAlign='center';o.innerHTML=`<img src="${s}" style="max-width:100%;max-height:92vh;border-radius:10px"><br><a href="${s}" download="photo.jpg">⬇</a>`;o.onclick=e=>{if(e.target.tagName!='A')o.remove()};document.body.append(o)}
 function ask(m,inp){return new Promise(r=>{const o=document.createElement('div');o.className='ov';o.innerHTML=`<div class=pn style="max-width:340px;margin:30vh auto 0"><p class=m style="font-size:15px">${m}</p>${inp?'<input id=ai type=password>':''}<button id=ay>OK</button><button class=s id=an>${t('cancel')}</button></div>`;document.body.append(o);$('#ay').onclick=()=>{const v=inp?$('#ai').value:true;o.remove();r(v)};$('#an').onclick=()=>{o.remove();r(null)}})}
 function rf(file){return new Promise(r=>{if(file.type.startsWith('image/')){const i=new Image,u=URL.createObjectURL(file);i.onload=()=>{const k=Math.min(1,1000/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=i.width*k;c.height=i.height*k;c.getContext('2d').drawImage(i,0,0,c.width,c.height);URL.revokeObjectURL(u);r({n:file.name,y:'i',d:c.toDataURL('image/jpeg',.72)})};i.onerror=()=>r(null);i.src=u}else{if(file.size>1.5e6){toast(t('big'));return r(null)}const x=new FileReader;x.onload=()=>r({n:file.name,y:'f',d:x.result});x.readAsDataURL(file)}})}
-async function pick(id){const e=$('#'+id),o=[];if(e)for(const f of e.files){const x=await rf(f);if(x)o.push(x)}return o}
+async function pick(id){const e=$('#'+id),o=[];if(!e||!e.files.length)return o;
+ const L=[...e.files];let n=0;
+ for(const f of L){
+  try{
+   n++;toast('⬆ '+n+'/'+L.length+' · '+f.name);
+   let body=f,type=f.type||'application/octet-stream';
+   if(type.startsWith('image/')){const x=await rf(f);if(x){body=await(await fetch(x.d)).blob();type='image/jpeg'}}
+   const safe=String(f.name||'file').replace(/[^\w.\-]+/g,'_').slice(-80);
+   const ref=firebase.storage().ref('uploads/'+Date.now()+'_'+Math.random().toString(36).slice(2,8)+'_'+safe);
+   const snapshot=await ref.put(body,{contentType:type});
+   const downloadURL=await snapshot.ref.getDownloadURL();
+   o.push({fileName:f.name,fileUrl:downloadURL,fileType:type,y:type.startsWith('image/')?'i':'f'});
+  }catch(err){const c=(err&&err.code)||'';toast(c=='storage/unauthorized'?'⚠ Upload refusé (vérifiez les Rules Firebase Storage)':'⚠ Upload: '+(c||(err&&err.message)||f.name))}
+ }
+ return o}
 async function sv(fn){try{return await fn()}catch(e){const c=(e&&e.code)||'';toast(c=='permission-denied'?'⚠ Accès refusé (vérifiez les Rules Firestore)':c=='unavailable'?'⚠ Pas de connexion internet':c?('⚠ '+c):t('full'))}}
 const cv=p=>msgs.filter(m=>m.from==p||m.to==p).sort((a,b)=>a.created-b.created),ur=p=>msgs.filter(m=>m.from==p&&m.created>(+st['rd:'+me.id+':'+p]||0)).length,unread=()=>msgs.filter(m=>m.to==me.id&&m.created>(+st['rd:'+me.id+':'+m.from]||0)).length;
 function bdg(){const e=$('#bd_chat');if(e){const n=unread();e.textContent=n||''}}
@@ -166,7 +182,7 @@ function listen(){unsubs.forEach(f=>f());unsubs=[];const C=n=>db.collection(n),u
  L(C('reports'),a=>reps=isA?a:a.filter(r=>r.uid==u),c=>{if(isA&&c.type=='added')toast(t('nr')+' : '+c.doc.data().title)});
  L(C('msgs'),a=>msgs=a.filter(m=>m.from==u||m.to==u),c=>{const d=c.doc.data();if(c.type=='added'&&d.to==u&&!(view=='chat'&&peer==d.from))toast('💬 '+t('nm'))});
  L(C('accounts'),a=>users=isA?a:a.filter(x=>x.status=='approved'),c=>{if(isA&&c.type=='added')toast(t('ns'))})}
-async function addT(){const ti=$('#tt').value.trim();if(!ti)return;const fs=await pick('tf');await sv(()=>db.collection('tasks').add({title:ti,desc:$('#td').value.trim(),due:$('#tdue').value,pr:+$('#pr').value,assignee:$('#as').value,files:fs,done:{},pf:{},created:Date.now()}));draw()}
+async function addT(){const ti=$('#tt').value.trim();if(!ti)return;const fs=await pick('tf');await sv(()=>db.collection('tasks').add({title:ti,desc:$('#td').value.trim(),due:$('#tdue').value,pr:+$('#pr').value,assignee:$('#as').value,files:fs,fileName:fs.length?fs[0].fileName:'',fileUrl:fs.length?fs[0].fileUrl:'',done:{},pf:{},created:Date.now()}));draw()}
 const delT=id=>db.doc('tasks/'+id).delete(),delR=id=>db.doc('reports/'+id).delete(),setS=(id,s)=>db.doc('accounts/'+id).update({status:s});
 async function mark(id){const x=tasks.find(k=>k.id==id),fs=await pick('pf_'+id);await sv(()=>db.doc('tasks/'+id).update({done:{...(x.done||{}),[me.id]:true},pf:{...(x.pf||{}),[me.id]:fs}}))}
 async function addR(){const ti=$('#rt').value.trim(),b=$('#rb').value.trim();if(!ti||!b)return;const fs=await pick('rpf');await sv(()=>db.collection('reports').add({uid:me.id,name:info.name,title:ti,body:b,files:fs,created:Date.now()}));draw()}
