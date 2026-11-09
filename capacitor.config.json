@@ -1,0 +1,11 @@
+{
+  "appId": "com.karimbenallouch.barrages",
+  "appName": "Barrages",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}
