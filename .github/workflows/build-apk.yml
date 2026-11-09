@@ -20,6 +20,12 @@ jobs:
           node-version: 18
       - name: Install dependencies
         run: npm install
+      - name: Create www directory and prepare assets
+        run: |
+          mkdir -p www
+          if [ -f index.html ]; then
+            cp index.html www/
+          fi
       - name: Build APK
         run: |
           npm install @capacitor/android
