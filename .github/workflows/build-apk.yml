@@ -31,7 +31,7 @@ jobs:
           npm install @capacitor/android
           npx cap add android
           
-          # نسخ الأيقونة مباشرة لمجلد الموارد في أندرويد باش تبان بلا أخطاء
+          # نسخ الأيقونة يدوياً لكل مقاسات أندرويد باش تتبدل ضروري
           if [ -f icon.png ]; then
             mkdir -p android/app/src/main/res/mipmap-hdpi
             mkdir -p android/app/src/main/res/mipmap-mdpi
