@@ -1,6 +1,6 @@
 {
   "appId": "com.karimbenallouch.barrages",
-  "appName": "Barrages",
+  "appName": "KBService",
   "webDir": "www",
   "server": {
     "androidScheme": "https"
